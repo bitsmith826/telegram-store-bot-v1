@@ -1,0 +1,26 @@
+{
+  "name": "telegram-store-bot-v1",
+  "version": "1.0.0",
+  "description": "",
+  "main": "src/bot.js",
+  "scripts": {
+    "start": "node src/bot.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "dependencies": {
+    "dotenv": "^17.4.2",
+    "node-cron": "^4.6.0",
+    "pg": "^8.23.0",
+    "qrcode": "^1.5.4",
+    "sharp": "^0.35.4",
+    "telegraf": "^4.16.3"
+  },
+  "optionalDependencies": {
+    "@img/sharp-linux-x64": "^0.35.4",
+    "@img/sharp-linuxmusl-x64": "^0.35.4"
+  }
+}
