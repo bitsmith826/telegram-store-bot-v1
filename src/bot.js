@@ -7,10 +7,10 @@ import cron from 'node-cron';
 
 // Matikan log warning berulang dari node-cron (seperti missed execution)
 cron.setLogger({
-    info: () => {},
-    warn: () => {},
+    info: () => { },
+    warn: () => { },
     error: (msg, err) => console.error('[CRON ERROR]', err || msg),
-    debug: () => {}
+    debug: () => { }
 });
 import { buatPayment, cekPayment } from './paymentgateway.js';
 import dns from 'dns';
@@ -710,7 +710,7 @@ const BRAND_METADATA = {
     'claude': { match: 'claude', name: 'Claude AI' },
     'midjourney': { match: 'midjourney', name: 'Midjourney' },
     'perplexity': { match: 'perplexity', name: 'Perplexity AI' },
-    'gemini': { match: 'gemini', name: 'Google Gemini' },
+    'gemini': { match: 'gemini', name: 'Gemini' },
     'quillbot': { match: 'quillbot', name: 'QuillBot' },
     'turnitin': { match: 'turnitin', name: 'Turnitin' },
     'grammarly': { match: 'grammarly', name: 'Grammarly' },
@@ -752,7 +752,10 @@ const BRAND_METADATA = {
     'zoom': { match: 'zoom', name: 'Zoom Pro' },
     'duolingo': { match: 'duolingo', name: 'Duolingo Plus' },
     'scribd': { match: 'scribd', name: 'Scribd' },
-    'wattpad': { match: 'wattpad', name: 'Wattpad Premium' }
+    'wattpad': { match: 'wattpad', name: 'Wattpad Premium' },
+
+    // lainnya
+    'script': { match: 'script', name: 'Script' }
 };
 
 function detectBrand(productName) {
@@ -778,6 +781,19 @@ function getVariantButtonLabel(productName, brandName) {
         label = label.replace(regex, '').trim();
     }
     return (label || productName).toUpperCase();
+}
+
+function formatShortPrice(price) {
+    const num = Number(price) || 0;
+    if (num >= 1000000) {
+        const val = num / 1000000;
+        return (val % 1 === 0 ? val : val.toFixed(1)).toString().replace('.', ',') + 'M';
+    }
+    if (num >= 1000) {
+        const val = num / 1000;
+        return (val % 1 === 0 ? val : val.toFixed(1)).toString().replace('.', ',') + 'K';
+    }
+    return num + 'P';
 }
 
 // fungsi untuk cek pending order berdasarkan produkid
@@ -1004,7 +1020,9 @@ async function halamanVarianKategori(ctx, brandKey, isEdit = true, page = 0) {
             }
 
             const variantName = getVariantButtonLabel(p.name, group.name);
-            keyboardRows.push([Markup.button.callback(variantName, `produk:${p.id}:${brandKey}`)]);
+            const shortPrice = formatShortPrice(p.price);
+            const buttonLabel = `${variantName} (${p.stock}) - ${shortPrice}`;
+            keyboardRows.push([Markup.button.callback(buttonLabel, `produk:${p.id}:${brandKey}`)]);
         });
 
         if (totalPages > 1) {
