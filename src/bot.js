@@ -2123,7 +2123,10 @@ async function processSuccessfulOrder(order, paidAt = null) {
 }
 
 // 2. Cron cek order expired (tiap 5 detik)
+let isCheckingExpired = false;
 cron.schedule("*/5 * * * * *", async () => {
+    if (isCheckingExpired) return;
+    isCheckingExpired = true;
     try {
         const result = await pool.query(`
             UPDATE orders
@@ -2215,11 +2218,16 @@ cron.schedule("*/5 * * * * *", async () => {
         `).catch(() => { });
     } catch (err) {
         console.error("[EXPIRE CRON ERROR]", err.message);
+    } finally {
+        isCheckingExpired = false;
     }
 });
 
 // 3. Cron cek status pembayaran pending ke RamaShop (tiap 3 detik)
+let isCheckingPending = false;
 cron.schedule("*/3 * * * * *", async () => {
+    if (isCheckingPending) return;
+    isCheckingPending = true;
     try {
         const result = await pool.query(`
             SELECT 
@@ -2264,11 +2272,16 @@ cron.schedule("*/3 * * * * *", async () => {
         }
     } catch (err) {
         console.error("[CRON CHECK PENDING ERROR]", err.message);
+    } finally {
+        isCheckingPending = false;
     }
 });
 
 // 4. Cron pemrosesan retry order yang berstatus 'paid' (misal: jika baru direstock admin)
+let isCheckingPaid = false;
 cron.schedule("*/3 * * * * *", async () => {
+    if (isCheckingPaid) return;
+    isCheckingPaid = true;
     try {
         const orderResult = await pool.query(`
             SELECT 
@@ -2299,6 +2312,8 @@ cron.schedule("*/3 * * * * *", async () => {
         }
     } catch (e) {
         console.error("[CRON PAID ERROR]", e.message);
+    } finally {
+        isCheckingPaid = false;
     }
 });
 
