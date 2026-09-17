@@ -1270,28 +1270,47 @@ function adminSetup(bot) {
         try {
             await ctx.answerCbQuery().catch(() => { });
 
-            // 1. Query Data Statistik dari PostgreSQL
-            const userQuery = await pool.query("SELECT COUNT(id) AS total FROM users");
-            const productQuery = await pool.query("SELECT COUNT(id) AS total FROM products");
-            const stockQuery = await pool.query("SELECT COUNT(id) AS total FROM stocks WHERE status = 'available'");
+            // 1. Query Statistik Keseluruhan (All-Time) & Master Data
+            const allTimeQuery = await pool.query(`
+                SELECT 
+                    (SELECT COUNT(*) FROM users) AS total_user,
+                    (SELECT COUNT(*) FROM products) AS total_produk,
+                    (SELECT COUNT(*) FROM stocks WHERE status = 'available') AS stok_ready,
+                    (SELECT COUNT(*) FROM orders WHERE status = 'pending') AS pending_orders,
+                    COALESCE(SUM(quantity), 0) AS total_terjual,
+                    COALESCE(SUM(total), 0) AS total_pendapatan,
+                    COUNT(id) AS total_transaksi
+                FROM orders
+                WHERE status IN ('paid', 'completed')
+            `);
 
-            // Pesanan Pending
-            const pendingQuery = await pool.query("SELECT COUNT(id) AS total FROM orders WHERE status = 'pending'");
+            // 2. Query Statistik Khusus Hari Ini
+            const todayQuery = await pool.query(`
+                SELECT 
+                    COUNT(id) AS total_paid,
+                    COALESCE(SUM(quantity), 0) AS terjual_today,
+                    COALESCE(SUM(total), 0) AS total_revenue
+                FROM orders
+                WHERE status IN ('paid', 'completed') 
+                AND created_at::date = CURRENT_DATE
+            `);
 
-            // Transaksi Lunas Hari Ini & Omset Hari Ini (mencakup status 'paid' dan 'completed')
-            const todayQuery = await pool.query(
-                "SELECT COUNT(id) AS total_paid, COALESCE(SUM(amount), 0) AS total_revenue " +
-                "FROM orders " +
-                "WHERE status IN ('paid', 'completed') AND created_at::date = CURRENT_DATE"
-            );
+            const allTime = allTimeQuery.rows[0];
+            const today = todayQuery.rows[0];
 
-            const totalUser = parseInt(userQuery.rows[0].total, 10) || 0;
-            const totalProduk = parseInt(productQuery.rows[0].total, 10) || 0;
-            const stokAvailable = parseInt(stockQuery.rows[0].total, 10) || 0;
-            const pendingOrder = parseInt(pendingQuery.rows[0].total, 10) || 0;
+            const totalUser = parseInt(allTime.total_user, 10) || 0;
+            const totalProduk = parseInt(allTime.total_produk, 10) || 0;
+            const stokAvailable = parseInt(allTime.stok_ready, 10) || 0;
+            const pendingOrder = parseInt(allTime.pending_orders, 10) || 0;
 
-            const paidToday = parseInt(todayQuery.rows[0].total_paid, 10) || 0;
-            const revenueToday = parseInt(todayQuery.rows[0].total_revenue, 10) || 0;
+            const totalTerjual = parseInt(allTime.total_terjual, 10) || 0;
+            const totalTransaksi = parseInt(allTime.total_transaksi, 10) || 0;
+            const totalPendapatan = parseInt(allTime.total_pendapatan, 10) || 0;
+            const totalPendapatanFormatted = totalPendapatan.toLocaleString("id-ID");
+
+            const paidToday = parseInt(today.total_paid, 10) || 0;
+            const terjualToday = parseInt(today.terjual_today, 10) || 0;
+            const revenueToday = parseInt(today.total_revenue, 10) || 0;
             const revenueTodayFormatted = revenueToday.toLocaleString("id-ID");
 
             // Format Waktu WIB (Waktu Indonesia Barat)
@@ -1302,24 +1321,28 @@ function adminSetup(bot) {
                 second: "2-digit"
             }).replace(/\./g, ".");
 
-            // 2. Format Pesan Teks
+            // 3. Format Pesan Teks
             const textStatistik =
                 "╭──────────────────\n" +
                 "│ 📊 <b>STATISTIK BOT</b>\n" +
                 "├──────────────────\n" +
-                "│ 👥 <b>Pengguna:</b> " + totalUser + " user\n" +
+                "│ 👥 <b>Total User:</b> " + totalUser + " pengguna\n" +
                 "│ 📦 <b>Total Produk:</b> " + totalProduk + " jenis\n" +
                 "│ 🟢 <b>Stok Ready:</b> " + stokAvailable + " item\n" +
                 "├──────────────────\n" +
+                "│ 🛍️ <b>Total Terjual:</b> " + totalTerjual + " pcs\n" +
+                "│ 💳 <b>Total Transaksi:</b> " + totalTransaksi + " sukses\n" +
+                "│ 💎 <b>Total Pendapatan:</b> Rp " + totalPendapatanFormatted + "\n" +
+                "├──────────────────\n" +
                 "│ ⏳ <b>Pesanan Pending:</b> " + pendingOrder + " transaksi\n" +
-                "│ ✅ <b>Lunas Hari Ini:</b> " + paidToday + " transaksi\n" +
+                "│ ✅ <b>Lunas Hari Ini:</b> " + paidToday + " transaksi (" + terjualToday + " pcs)\n" +
                 "│ 💰 <b>Omset Hari Ini:</b> Rp " + revenueTodayFormatted + "\n" +
                 "├──────────────────\n" +
                 "│ ⏰ <b>Pembaruan:</b> " + waktuWib + " WIB\n" +
                 "╰──────────────────\n\n" +
                 "💡 <i>Data diperbarui secara realtime dari database.</i>";
 
-            // 3. Render Tampilan & Inline Keyboard
+            // 4. Render Tampilan & Inline Keyboard
             const keyboard = Markup.inlineKeyboard([
                 [
                     Markup.button.callback("🔄 Refresh Data", "refresh_stats"),
