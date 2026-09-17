@@ -26,6 +26,9 @@ function adminSetup(bot) {
                         [
                             Markup.button.callback("📊 Statistik", "admin_stats"),
                             Markup.button.callback("🔎 Cari Order", "admin_search_order")
+                        ],
+                        [
+                            Markup.button.callback("🔥 Produk Terlaris", "admin_top_terlaris")
                         ]
                     ])
                 }
@@ -248,6 +251,9 @@ function adminSetup(bot) {
                         [
                             Markup.button.callback("📊 Statistik", "admin_stats"),
                             Markup.button.callback("🔎 Cari Order", "admin_search_order")
+                        ],
+                        [
+                            Markup.button.callback("🔥 Produk Terlaris", "admin_top_terlaris")
                         ]
                     ])
                 }
@@ -1337,6 +1343,80 @@ function adminSetup(bot) {
         } catch (err) {
             console.log("Gagal memuat statistik admin:", err.message);
             await ctx.reply("❌ Terjadi kesalahan saat memuat statistik.").catch(() => { });
+        }
+    });
+
+    bot.action("admin_top_terlaris", async (ctx) => {
+        try {
+            await ctx.answerCbQuery().catch(() => { });
+
+            const query = `
+                SELECT 
+                    p.id,
+                    p.name,
+                    p.price,
+                    p.active,
+                    COALESCE(SUM(o.quantity), 0) AS total_terjual,
+                    COALESCE(SUM(o.total), 0) AS total_omset,
+                    (SELECT COUNT(*) FROM stocks s WHERE s.product_id = p.id AND s.status = 'available') AS stok_tersedia,
+                    (SELECT COALESCE(SUM(o2.quantity), 0) FROM orders o2 
+                     WHERE o2.product_id = p.id 
+                     AND o2.status = 'pending' 
+                     AND (o2.expires_at > NOW() OR o2.expires_at IS NULL)) AS stok_pending
+                FROM products p
+                LEFT JOIN orders o ON p.id = o.product_id AND o.status = 'completed'
+                WHERE p.active = TRUE
+                GROUP BY p.id, p.name, p.price, p.active
+                ORDER BY total_terjual DESC, p.id ASC
+                LIMIT 3
+            `;
+
+            const result = await pool.query(query);
+
+            if (result.rows.length === 0) {
+                return await ctx.editMessageText("📦 <b>PRODUK TERLARIS</b>\n━━━━━━━━━━━━━━━━━━━━\nBelum ada produk aktif yang terdaftar di database.", {
+                    parse_mode: "HTML",
+                    ...Markup.inlineKeyboard([[Markup.button.callback("⬅️ Kembali", "back_to_admin")]])
+                });
+            }
+
+            const medals = ['🥇', '🥈', '🥉'];
+            const lines = [
+                "╭──────────────────",
+                "│ 🔥 <b>PRODUK TERLARIS (TOP 3)</b>",
+                "├──────────────────"
+            ];
+
+            result.rows.forEach((p, idx) => {
+                const medal = medals[idx] || `[${idx + 1}]`;
+                const stokAvail = parseInt(p.stok_tersedia, 10) || 0;
+                const stokPend = parseInt(p.stok_pending, 10) || 0;
+                const sisaStok = Math.max(0, stokAvail - stokPend);
+                const omset = Number(p.total_omset || 0).toLocaleString("id-ID");
+                const status = p.active ? "✅ Aktif" : "❌ Nonaktif";
+
+                lines.push(`│ ${medal} <b>[${idx + 1}] ${p.name.toUpperCase()}</b>`);
+                lines.push(`│ ⬩ Terjual: ${p.total_terjual} pcs`);
+                lines.push(`│ ⬩ Total Omset: Rp ${omset}`);
+                lines.push(`│ ⬩ Sisa Stok: ${sisaStok} item`);
+                lines.push(`│ ⬩ Status: ${status}`);
+                if (idx < result.rows.length - 1) {
+                    lines.push("├──────────────────");
+                }
+            });
+
+            lines.push("╰──────────────────\n");
+            lines.push("💡 <i>Dihitung berdasarkan pesanan yang berstatus sukses (completed).</i>");
+
+            await ctx.editMessageText(lines.join('\n'), {
+                parse_mode: "HTML",
+                ...Markup.inlineKeyboard([
+                    [Markup.button.callback("⬅️ Kembali", "back_to_admin")]
+                ])
+            });
+        } catch (err) {
+            console.error("Gagal memuat top terlaris admin:", err.message);
+            await ctx.reply("❌ Terjadi kesalahan saat memuat data produk terlaris.").catch(() => { });
         }
     });
 
