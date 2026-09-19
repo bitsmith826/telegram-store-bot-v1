@@ -139,7 +139,16 @@ import 'dotenv/config';
 // ==================================================================================================
 
 // ===================================== NOVAPAY.ID =================================================
-const buatPayment = async (amount, productName = null, quantity = null) => {
+// Helper untuk memastikan string tanggal dari NovaPay (WIB) memiliki offset zona waktu (+07:00)
+const formatWibDate = (dateStr) => {
+    if (!dateStr) return null;
+    if (typeof dateStr === 'string' && /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(dateStr)) {
+        return dateStr.replace(' ', 'T') + '+07:00';
+    }
+    return dateStr;
+};
+
+const buatPayment = async (amount, productName = null, quantity = null, customer = null) => {
     const url = 'https://novpay.id/api/v1/payment/create';
 
     let description = `Order ${process.env.NAMA_TOKO || 'Vhee Store'}`;
@@ -151,6 +160,8 @@ const buatPayment = async (amount, productName = null, quantity = null) => {
         amount: Math.round(Number(amount)),
         description: description
     };
+
+    if (customer?.email) payload.customer_email = customer.email;
 
     try {
         const response = await fetch(url, {
@@ -184,7 +195,7 @@ const buatPayment = async (amount, productName = null, quantity = null) => {
                 qrString: d.qr_string || d.qr_content,         // String QRIS untuk di-render jadi gambar
                 qrImage: d.qr_url,
                 checkoutUrl: d.checkout_url || d.payment_url,
-                expiredAt: d.expired_at,
+                expiredAt: formatWibDate(d.expired_at),
                 raw: d
             }
         };
@@ -222,7 +233,7 @@ const cekPayment = async (transactionId) => {
             success: true,
             data: {
                 status: d.status, // "pending" | "success" | "expired" | "failed"
-                paidAt: d.paid_at,
+                paidAt: formatWibDate(d.paid_at),
                 amount: d.amount,
                 amountCharged: d.amount_charged,
                 raw: d

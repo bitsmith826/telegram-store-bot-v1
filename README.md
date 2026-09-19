@@ -2,7 +2,7 @@
 
 Bot Telegram otomatis 24 jam nonstop untuk penjualan akun & produk digital premium (Netflix, Spotify, Canva, CapCut, YouTube, dll).
 
-Terhubung langsung dengan **PostgreSQL Supabase (Berbagi 1 Database dengan Web Store)** dan **Payment Gateway QRIS RamaShop**.
+Terhubung langsung dengan **PostgreSQL Supabase (Berbagi 1 Database dengan Web Store)** dan **Payment Gateway QRIS NovaPay**.
 
 ---
 
@@ -15,7 +15,7 @@ Terhubung langsung dengan **PostgreSQL Supabase (Berbagi 1 Database dengan Web S
 - **Penyerahan Akun Instan:** Status pembayaran dicek secara real-time. Begitu pembayaran terkonfirmasi lunas, akun digital (`email:password` / link invite) langsung dikirimkan ke chat pembeli secara instan.
 
 ### 2. 🔄 Background Cron Jobs Real-Time (Daemon Otomatis)
-- **Auto-Detect Pembayaran (Tiap 3 Detik):** Bot memeriksa status pembayaran order pending dan cancelled ke gateway RamaShop setiap 3 detik.
+- **Auto-Detect Pembayaran (Tiap 3 Detik):** Bot memeriksa status pembayaran order pending dan cancelled ke gateway NovaPay setiap 3 detik.
 - **Auto-Retry Akun Paid (Tiap 3 Detik):** Menjamin tidak ada transaksi berstatus paid yang tertunda penyerahan akunnya.
 - **Auto-Cleanup Order Expired (Tiap 5 Detik):** Pesanan pending yang melewati batas 15 menit otomatis diubah menjadi `expired`, stok dikembalikan ke gudang (*auto-restored*), pesan chat diupdate, dan notifikasi kedaluwarsa dikirim ke channel monitoring.
 - **Auto-Clean Sesi Database (Tiap Minggu Jam 03:00):** Membersihkan data sesi lama di tabel `bot_sessions` yang berusia > 7 hari agar database PostgreSQL tidak membengkak.
@@ -44,7 +44,7 @@ Terhubung langsung dengan **PostgreSQL Supabase (Berbagi 1 Database dengan Web S
 - **Kelola User:** Melihat total pelanggan yang terdaftar di database.
 - **Diagnostik Sistem:**
   - `/dbtest`: Menguji koneksi database PostgreSQL Supabase (`SELECT NOW()`).
-  - `/pgtest`: Menguji koneksi API Key payment gateway RamaShop dengan simulasi deposit Rp 1.000.
+  - `/pgtest`: Menguji koneksi API Key payment gateway NovaPay dengan simulasi deposit Rp 1.000.
 
 ### 6. 📢 Channel Monitoring Real-Time
 - Mengirim notifikasi transaksi ke Channel Monitoring Telegram untuk 4 status:
@@ -72,7 +72,7 @@ Terhubung langsung dengan **PostgreSQL Supabase (Berbagi 1 Database dengan Web S
 | :--- | :--- |
 | `/admin` | Membuka dashboard panel kendali admin interaktif (Kelola Produk, Stok, User, Broadcast) |
 | `/dbtest` | **Tes Koneksi Database:** Menguji apakah bot berhasil terhubung ke PostgreSQL / Supabase (`SELECT NOW()`) |
-| `/pgtest` | **Tes Payment Gateway:** Menguji koneksi API Key RamaShop QRIS dengan simulasi deposit Rp 1.000 |
+| `/pgtest` | **Tes Payment Gateway:** Menguji koneksi API Key NovaPay QRIS dengan simulasi deposit Rp 1.000 |
 
 ---
 
@@ -111,9 +111,9 @@ Terhubung langsung dengan **PostgreSQL Supabase (Berbagi 1 Database dengan Web S
    - **`USER_ID_CHANNEL` (Channel Monitoring):**
      1. Buat Channel Telegram baru dan tambahkan bot Anda sebagai **Administrator**.
      2. Forward pesan dari channel tersebut ke [@userinfobot](https://t.me/userinfobot) untuk mendapatkan ID Channel (berawalan `-100...`).
-   - **`API_KEY_PG` (Payment Gateway RamaShop):**
-     1. Buka dashboard [ramashop.my.id](https://ramashop.my.id) > Menu **Integrasi API / Developer**.
-     2. Generate API Key dan salin kodenya.
+   - **`API_KEY_PG` (Payment Gateway NovaPay):**
+     1. Buka dashboard [novpay.id](https://novpay.id) > Menu **API / Developer**.
+     2. Salin API Key Anda.
    - **`DB_URL` (Database PostgreSQL Supabase):**
      1. Di Supabase > **Project Settings** > **Database** > bagian **Connection String** pilih tab **URI** (Connection Pooling port `6543`).
 
@@ -124,7 +124,7 @@ Terhubung langsung dengan **PostgreSQL Supabase (Berbagi 1 Database dengan Web S
 
 6. **Lakukan Pengujian Diagnostik:**
    - Kirim `/dbtest` ke bot untuk menguji koneksi database Supabase.
-   - Kirim `/pgtest` ke bot untuk menguji payment gateway RamaShop.
+   - Kirim `/pgtest` ke bot untuk menguji payment gateway NovaPay.
 
 ---
 

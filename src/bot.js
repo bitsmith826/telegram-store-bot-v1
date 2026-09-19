@@ -1512,7 +1512,10 @@ bot.action(/^paymentQris:(\d+):(\d+)$/, async (ctx) => {
 
         // jika memenuhi syarat diatas maka buatkan order
         const total = currentPrice * Number(qty);
-        const buatTX = await buatPayment(total, product.name, qty);
+        const customer = {
+            email: `${ctx.chat.id}@t.me`
+        };
+        const buatTX = await buatPayment(total, product.name, qty, customer);
         if (!buatTX || !buatTX.success || !buatTX.data?.depositId) {
             return await ctx.answerCbQuery("Gagal membuat QRIS, silakan coba beberapa saat lagi.", { show_alert: true }).catch(() => { });
         }
