@@ -139,12 +139,17 @@ import 'dotenv/config';
 // ==================================================================================================
 
 // ===================================== NOVAPAY.ID =================================================
-const buatPayment = async (amount) => {
+const buatPayment = async (amount, productName = null, quantity = null) => {
     const url = 'https://novpay.id/api/v1/payment/create';
+
+    let description = `Order ${process.env.NAMA_TOKO || 'Vhee Store'}`;
+    if (productName) {
+        description = quantity ? `${productName} (${quantity}x)` : productName;
+    }
 
     const payload = {
         amount: Math.round(Number(amount)),
-        description: `Order ${process.env.NAMA_TOKO || 'Vhee Store'}`
+        description: description
     };
 
     try {
