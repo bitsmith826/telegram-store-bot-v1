@@ -2226,10 +2226,10 @@ cron.schedule("*/5 * * * * *", async () => {
     }
 });
 
-// 3. Cron cek status pembayaran pending/expired baru ke NovaPay (tiap 3 detik)
+// 3. Cron cek status pembayaran pending ke NovaPay (tiap 5 detik)
 let isCheckingPending = false;
 let lastPendingCheckTime = Date.now();
-cron.schedule("*/3 * * * * *", async () => {
+cron.schedule("*/5 * * * * *", async () => {
     // Watchdog lock: jika isCheckingPending tertahan > 20 detik (misal network hang), reset paksa
     if (isCheckingPending) {
         if (Date.now() - lastPendingCheckTime > 20000) {
@@ -2290,10 +2290,10 @@ cron.schedule("*/3 * * * * *", async () => {
     }
 });
 
-// 4. Cron pemrosesan retry order yang berstatus 'paid' (misal: jika baru direstock admin)
+// 4. Cron pemrosesan retry order yang berstatus 'paid' (misal: jika baru direstock admin, tiap 5 detik)
 let isCheckingPaid = false;
 let lastPaidCheckTime = Date.now();
-cron.schedule("*/3 * * * * *", async () => {
+cron.schedule("*/5 * * * * *", async () => {
     // Watchdog lock: jika isCheckingPaid tertahan > 20 detik, reset paksa
     if (isCheckingPaid) {
         if (Date.now() - lastPaidCheckTime > 20000) {
