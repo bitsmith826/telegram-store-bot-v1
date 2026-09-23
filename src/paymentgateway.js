@@ -170,7 +170,8 @@ const buatPayment = async (amount, productName = null, quantity = null, customer
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${process.env.API_KEY_PG}`
             },
-            body: JSON.stringify(payload)
+            body: JSON.stringify(payload),
+            signal: AbortSignal.timeout(10000)
         });
 
         if (!response.ok) {
@@ -214,10 +215,13 @@ const cekPayment = async (transactionId) => {
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${process.env.API_KEY_PG}`
-            }
+            },
+            signal: AbortSignal.timeout(8000)
         });
 
         if (!response.ok) {
+            const errBody = await response.text().catch(() => '');
+            console.error(`[NOVAPAY STATUS ERROR] ID: ${transactionId}, Status: ${response.status} ${response.statusText}, Body: ${errBody}`);
             return null;
         }
 

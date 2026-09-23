@@ -2226,11 +2226,21 @@ cron.schedule("*/5 * * * * *", async () => {
     }
 });
 
-// 3. Cron cek status pembayaran pending ke RamaShop (tiap 3 detik)
+// 3. Cron cek status pembayaran pending/expired baru ke NovaPay (tiap 3 detik)
 let isCheckingPending = false;
+let lastPendingCheckTime = Date.now();
 cron.schedule("*/3 * * * * *", async () => {
-    if (isCheckingPending) return;
+    // Watchdog lock: jika isCheckingPending tertahan > 20 detik (misal network hang), reset paksa
+    if (isCheckingPending) {
+        if (Date.now() - lastPendingCheckTime > 20000) {
+            console.warn('[CRON WATCHDOG] isCheckingPending tertahan > 20 detik. Mereset lock...');
+            isCheckingPending = false;
+        } else {
+            return;
+        }
+    }
     isCheckingPending = true;
+    lastPendingCheckTime = Date.now();
     try {
         const result = await pool.query(`
             SELECT 
@@ -2282,9 +2292,19 @@ cron.schedule("*/3 * * * * *", async () => {
 
 // 4. Cron pemrosesan retry order yang berstatus 'paid' (misal: jika baru direstock admin)
 let isCheckingPaid = false;
+let lastPaidCheckTime = Date.now();
 cron.schedule("*/3 * * * * *", async () => {
-    if (isCheckingPaid) return;
+    // Watchdog lock: jika isCheckingPaid tertahan > 20 detik, reset paksa
+    if (isCheckingPaid) {
+        if (Date.now() - lastPaidCheckTime > 20000) {
+            console.warn('[CRON WATCHDOG] isCheckingPaid tertahan > 20 detik. Mereset lock...');
+            isCheckingPaid = false;
+        } else {
+            return;
+        }
+    }
     isCheckingPaid = true;
+    lastPaidCheckTime = Date.now();
     try {
         const orderResult = await pool.query(`
             SELECT 
