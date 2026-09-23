@@ -1,4 +1,35 @@
 import 'dotenv/config';
+
+// ==================== AUTO TIMESTAMP LOGGER (WIB) ====================
+// Menambahkan timestamp otomatis [DD/MM/YYYY HH:mm:ss WIB] sebelum setiap log di console
+const getLogTimestamp = () => {
+    const d = new Date();
+    const dateStr = d.toLocaleDateString('id-ID', {
+        timeZone: 'Asia/Jakarta',
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+    });
+    const timeStr = d.toLocaleTimeString('id-ID', {
+        timeZone: 'Asia/Jakarta',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false
+    }).replace(/\./g, ':');
+    return `[${dateStr} ${timeStr} WIB]`;
+};
+
+const _origLog = console.log;
+const _origError = console.error;
+const _origWarn = console.warn;
+const _origInfo = console.info;
+
+console.log = (...args) => _origLog(getLogTimestamp(), ...args);
+console.error = (...args) => _origError(getLogTimestamp(), ...args);
+console.warn = (...args) => _origWarn(getLogTimestamp(), ...args);
+console.info = (...args) => _origInfo(getLogTimestamp(), ...args);
+// =====================================================================
 import { Markup, session, Telegraf } from 'telegraf';
 import { fmt, bold, italic, code } from 'telegraf/format';
 import pg from 'pg';
