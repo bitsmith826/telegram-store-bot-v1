@@ -17,7 +17,13 @@ const pool = new Pool({
     ssl: {
         rejectUnauthorized: false
     },
-    max: 20
+    max: 10,
+    connectionTimeoutMillis: 5000,
+    idleTimeoutMillis: 30000,
+    keepAlive: true,
+    keepAliveInitialDelayMillis: 10000,
+    statement_timeout: 8000,
+    query_timeout: 8000
 });
 
 // Listener error pool agar error koneksi background tidak menjadi uncaught exception
