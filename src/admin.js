@@ -3,18 +3,36 @@ import { pool } from './database.js';
 import { apaAdmin, checkProdukPending, checkStokAvailable } from './bot.js';
 
 function adminSetup(bot) {
-    // 🛡️ SECURITY INTERCEPTOR: Otomatis lindungi seluruh action di modul admin dengan apaAdmin(ctx)
-    const originalAction = bot.action.bind(bot);
-    bot.action = (trigger, ...handlers) => {
-        const wrappedHandlers = handlers.map(handler => {
-            return async (ctx, next) => {
-                const isAdmin = await apaAdmin(ctx);
-                if (!isAdmin) return;
-                return handler(ctx, next);
-            };
-        });
-        return originalAction(trigger, ...wrappedHandlers);
-    };
+    // ================= GLOBAL ADMIN SECURITY GUARD =================
+    // Mencegah dan memblokir seluruh aksi/tombol panel admin dari pengguna yang bukan admin
+    const ADMIN_CALLBACKS = new Set([
+        "broadcast", "broadcast_execute", "manageUser", "kelolaProduk", "back_to_admin",
+        "editProdukList", "kelolaStok", "stok_tambah", "stok_hapus", "stok_ambil",
+        "admin_stats", "refresh_stats", "admin_top_terlaris", "admin_search_order"
+    ]);
+
+    const ADMIN_REGEX_PATTERNS = [
+        /^produk_/, /^editProduk:/, /^editField:/, /^editProdukPage:/,
+        /^toggleActiveProduk:/, /^konfirmasiTambahProduk_/, /^stokTambahPage:/,
+        /^process_stok_tambah:/, /^stokHapusPage:/, /^process_stok_hapus:/,
+        /^confirm_stok_hapus:/, /^stokAmbilPage:/, /^process_stok_ambil:/,
+        /^view_order_/
+    ];
+
+    bot.use(async (ctx, next) => {
+        if (ctx.callbackQuery && ctx.callbackQuery.data) {
+            const data = ctx.callbackQuery.data;
+            const isAdminAction = ADMIN_CALLBACKS.has(data) || ADMIN_REGEX_PATTERNS.some(rgx => rgx.test(data));
+            if (isAdminAction) {
+                const adminCek = await apaAdmin(ctx);
+                if (!adminCek) {
+                    await ctx.answerCbQuery("⛔ Akses ditolak: Khusus Admin!", { show_alert: true }).catch(() => { });
+                    return;
+                }
+            }
+        }
+        return next();
+    });
 
     // ========================================= ADMIN PANEL ==========================================
     async function menuAdmin(ctx) {
@@ -1659,9 +1677,6 @@ function adminSetup(bot) {
             console.error("Gagal menampilkan detail order callback:", err.message);
         }
     });
-
-    // Pulihkan bot.action asli agar handler publik di bot.js tidak terpengaruh
-    bot.action = originalAction;
 }
 
 export { adminSetup }
