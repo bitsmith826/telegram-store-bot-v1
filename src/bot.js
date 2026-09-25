@@ -781,7 +781,7 @@ const BRAND_METADATA = {
     'resso': { match: 'resso', name: 'Resso' },
     'notion': { match: 'notion', name: 'Notion' },
     'zoom': { match: 'zoom', name: 'Zoom Pro' },
-    'duolingo': { match: 'duolingo', name: 'Duolingo Plus' },
+    'duolingo': { match: 'duolingo', name: 'Duolingo' },
     'scribd': { match: 'scribd', name: 'Scribd' },
     'wattpad': { match: 'wattpad', name: 'Wattpad Premium' },
 
