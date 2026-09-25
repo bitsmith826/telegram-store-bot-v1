@@ -90,9 +90,10 @@ Terhubung langsung dengan **PostgreSQL Supabase (Berbagi 1 Database dengan Web S
    ```
 
 3. **Setup Database (Supabase / PostgreSQL):**
-   - Buat project baru di [Supabase](https://supabase.com).
-   - Masuk ke menu **SQL Editor** di dashboard Supabase Anda.
-   - Buka file `database_schema.sql`, salin seluruh kodenya, tempelkan ke SQL Editor, lalu klik **Run**.
+   - Buka **[Supabase](https://supabase.com)** dan login / buat akun.
+   - Klik **New Project**, tentukan nama project, buat **Database Password** (catat password ini!), dan pilih Region terdekat (contoh: *Singapore*).
+   - Masuk ke menu **SQL Editor** di sidebar kiri (ikon `>_`).
+   - Klik **New query**, lalu salin seluruh isi file `database_schema.sql`, tempelkan ke SQL Editor, lalu klik tombol **Run**.
    - *(Jika Anda sudah menjalankan schema ini untuk Web Store, lewati langkah ini karena keduanya memakai database yang sama).*
 
 4. **Setup Konfigurasi Environment:**
@@ -121,8 +122,19 @@ Terhubung langsung dengan **PostgreSQL Supabase (Berbagi 1 Database dengan Web S
      6. Tempelkan nilai tersebut ke variabel `API_KEY_PG` di file `.env`.
      7. *(Diagnostik)*: Setelah bot dijalankan, kirim command `/pgtest` di chat Telegram untuk memastikan bot terhubung sukses ke NovaPay.
    - **`DB_URL` (Database PostgreSQL Supabase):**
-     1. Di Supabase > **Project Settings** > **Database** > bagian **Connection String** pilih tab **URI** (Port `5432`).
-     2. *Tips VPS/Hosting:* Jika mengalami kendala DNS (`EAI_AGAIN`), ganti hostname pooler dengan Direct IP AWS Supabase: `54.255.219.82:5432`.
+     1. Buka dashboard project Anda di **[Supabase](https://supabase.com)**.
+     2. Klik tombol **Connect** di bagian header atas (atau buka menu **Project Settings** ⚙️ di pojok kiri bawah > **Database**).
+     3. Pada bagian **Connection string**, pilih tab **URI**.
+     4. Pilih mode **Session (Port 5432)** atau Direct Connection.
+     5. Salin URL yang tampil, contoh:
+        ```text
+        postgresql://postgres.[PROJECT_REF]:[YOUR-PASSWORD]@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres
+        ```
+     6. **PENTING:** Ganti tulisan `[YOUR-PASSWORD]` di dalam URL tersebut dengan password database yang Anda buat di langkah 3 *(jika lupa password, klik tombol "Reset database password" di halaman tersebut)*.
+     7. *Tips VPS/Hosting:* Jika bot mengalami error koneksi DNS (`getaddrinfo EAI_AGAIN aws-0-...`), ganti nama host pooler dengan Direct IP AWS Supabase:
+        ```text
+        postgresql://postgres.[PROJECT_REF]:[PASSWORD]@54.255.219.82:5432/postgres
+        ```
 
 5. **Jalankan Bot:**
    ```bash
