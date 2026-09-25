@@ -56,25 +56,8 @@ function adminSetup(bot) {
             const textPrompt =
                 "📢 <b>KIRIM BROADCAST</b>\n" +
                 "━━━━━━━━━━━━━━━━━━━━\n" +
-                "Silakan tulis pesan/pengumuman yang ingin disebarkan ke seluruh pengguna bot.\n\n" +
-                "<blockquote><code><b>📢 BROADCAST MESSAGE / ✅ INFORMASI RESTOCK</b>\n\n" +
-                "Selamat pagi pelanggan setia! 👋\n" +
-                "Stok beberapa produk favorit sudah diisi kembali, silakan amankan pesananmu: / PRODUK RESTOCK READY ⚡️\n\n" +
-                "───────────────\n" +
-                "◉ AI Gemini Advanced\n" +
-                "◉ Alight Motion Pro\n" +
-                "◉ Apple Music\n" +
-                "◉ Bstation Premium\n" +
-                "───────────────\n\n" +
-                "💡 Ketik /start untuk mulai transaksi\n\n" +
-                "🤖 <b>Order via bot:</b> @bot_username\n" +
-                "💬 <b>Admin CS:</b> @admin_username\n" +
-                "📢 <b>Channel:</b> @channel_username\n" +
-                "───────────────\n\n" +
-                "Segera checkout sebelum kehabisan.\n" +
-                "Terima kasih & selamat berbelanja ✨" +
-                "</code></blockquote>" + "\n\n" +
-                "💡 <i>Dukungan format HTML (bold, italic, link) dan pesan teks biasa.</i>";
+                "Silakan kirimkan <b>Pesan Teks</b> atau <b>Foto/Gambar (beserta caption)</b> yang ingin disiarkan ke seluruh pengguna bot.\n\n" +
+                "💡 <i>Tips: Anda bisa langsung menggunakan fitur format bawaan Telegram (Bold, Italic, Link, Spoiler, dll). Format teks dan gambar akan tersalin persis sama ke semua pengguna tanpa perlu tag HTML manual.</i>";
 
             await ctx.editMessageText(textPrompt, {
                 parse_mode: "HTML",
@@ -86,48 +69,40 @@ function adminSetup(bot) {
         } catch (err) {
             console.log("Gagal memulai broadcast:", err.message);
         }
-        // try {
-        //     await ctx.answerCbQuery().catch(() => {})
-        //     await ctx.editMessageText(`📢 <b>BROADCAST</b>\n━━━━━━━━━━━━━━━━━━━━\nHalaman ini masih <i>under construction</i>.`, {
-        //         parse_mode: 'HTML',
-        //         ...Markup.inlineKeyboard([Markup.button.callback("⬅️ Kembali", "back_to_admin")])
-        //     })
-        // } catch (err) {
-        //     console.log("[ERROR] Gagal ke menu broadcast", err.message)
-        // }
     })
 
     bot.action("broadcast_execute", async (ctx) => {
         try {
             await ctx.answerCbQuery().catch(() => { });
 
-            if (!ctx.session || !ctx.session.broadcastContent) {
-                return await ctx.reply("⚠️ Sesi broadcast telah kadaluwarsa.")
+            if (!ctx.session || !ctx.session.broadcastMessageId || !ctx.session.broadcastChatId) {
+                return await ctx.reply("⚠️ Sesi broadcast telah kadaluwarsa atau pesan tidak ditemukan.");
             }
 
-            const messageText = ctx.session.broadcastContent;
-            delete ctx.session.broadcastContent
+            const fromChatId = ctx.session.broadcastChatId;
+            const messageId = ctx.session.broadcastMessageId;
+            delete ctx.session.broadcastMessageId;
+            delete ctx.session.broadcastChatId;
 
-            await ctx.editMessageText("⏳ Sedang mengirimkan broadcast...", { parse_mode: "HTML" });
+            await ctx.editMessageText("⏳ <b>Sedang mengirimkan broadcast ke seluruh pengguna...</b>\n<i>Mohon tunggu hingga proses selesai.</i>", { parse_mode: "HTML" }).catch(() => { });
 
             // Ambil seluruh Telegram ID pengguna Bot (hanya ID asli Telegram > 0)
             const usersRes = await pool.query("SELECT telegram_id FROM users WHERE telegram_id > 0");
             const users = usersRes.rows;
 
             let successCount = 0;
-            let adminCount = 0;
             let failCount = 0;
 
             for (const user of users) {
                 try {
-                    await ctx.telegram.sendMessage(user.telegram_id, messageText, { parse_mode: "HTML" });
+                    await ctx.telegram.copyMessage(user.telegram_id, fromChatId, messageId);
                     successCount++;
                 } catch (err) {
                     // User memblokir bot atau akun dihapus
                     failCount++;
                 }
-                // Delay tipis (50ms) untuk mencegah pembatasan rate limit dari Telegram API
-                await new Promise((resolve) => setTimeout(resolve, 50));
+                // Delay 40ms untuk mencegah pembatasan rate limit dari Telegram API (~25-30 msg/sec limit)
+                await new Promise((resolve) => setTimeout(resolve, 40));
             }
 
             const textReport =
@@ -135,7 +110,6 @@ function adminSetup(bot) {
                 "━━━━━━━━━━━━━━━━━━━━\n" +
                 "🟢 <b>Berhasil Terkirim:</b> " + successCount + " pengguna\n" +
                 "🔴 <b>Gagal (Bot Diblokir):</b> " + failCount + " pengguna\n" +
-                "🤖 <b>Admin (Tidak Dikirim):</b> " + adminCount + " pengguna\n" +
                 "📊 <b>Total Diproses:</b> " + users.length + " pengguna\n" +
                 "━━━━━━━━━━━━━━━━━━━━";
 
@@ -144,6 +118,13 @@ function adminSetup(bot) {
                 ...Markup.inlineKeyboard([
                     [Markup.button.callback("↩️ Kembali ke Menu Admin", "back_to_admin")]
                 ])
+            }).catch(async () => {
+                await ctx.reply(textReport, {
+                    parse_mode: "HTML",
+                    ...Markup.inlineKeyboard([
+                        [Markup.button.callback("↩️ Kembali ke Menu Admin", "back_to_admin")]
+                    ])
+                });
             });
         } catch (err) {
             console.log("Gagal mengeksekusi broadcast:", err.message);
@@ -1028,13 +1009,17 @@ function adminSetup(bot) {
     });
 
     // ================= ADMIN INPUT HANDLER =================
-    bot.on("text", async (ctx, next) => {
+    bot.on(["text", "photo"], async (ctx, next) => {
         try {
             // Kalau tidak sedang menjalankan aksi admin,
             // lanjutkan ke handler berikutnya
-            // misal kita ketik angka atu teks apapun maka akan return next kalau adminAction nya undifined
-            if (!ctx.session || !ctx.session.adminAction) { // nilainya undefined kalau kita nggak klik tambah
-                return next()
+            if (!ctx.session || !ctx.session.adminAction) {
+                return next();
+            }
+
+            // Jika admin mengirim foto saat berada di menu selain broadcast, ingatkan untuk kirim teks
+            if (ctx.message.photo && ctx.session.adminAction !== "waiting_broadcast_text") {
+                return await ctx.reply("❌ Mohon kirimkan input berupa teks.");
             }
 
             // ================= TAMBAH PRODUK =================
@@ -1230,26 +1215,33 @@ function adminSetup(bot) {
             }
 
             if (ctx.session.adminAction === "waiting_broadcast_text") {
-                const broadcastContent = ctx.message.text;
+                const isPhoto = !!(ctx.message.photo && ctx.message.photo.length > 0);
+                const isText = !!ctx.message.text;
+
+                if (!isPhoto && !isText) {
+                    return await ctx.reply("❌ Format tidak didukung. Silakan kirimkan pesan berupa teks atau foto.");
+                }
+
+                // Simpan ID chat dan message ID asli pengirim untuk di-copyMessage
+                ctx.session.broadcastChatId = ctx.chat.id;
+                ctx.session.broadcastMessageId = ctx.message.message_id;
+                delete ctx.session.adminAction;
 
                 // Hitung total penerima (hanya pengguna Telegram asli)
                 const countRes = await pool.query("SELECT COUNT(id) AS total FROM users WHERE telegram_id > 0");
                 const totalUsers = countRes.rows[0].total || 0;
 
-                ctx.session.broadcastContent = broadcastContent;
-                delete ctx.session.adminAction
-
                 const textConfirm =
                     "⚠️ <b>KONFIRMASI BROADCAST</b>\n" +
                     "━━━━━━━━━━━━━━━━━━━━\n" +
-                    "🎯 <b>Target Penerima:</b> " + totalUsers + " pengguna\n" +
+                    `📦 <b>Tipe Pesan:</b> ${isPhoto ? '🖼️ Foto / Gambar (+ Caption)' : '📝 Pesan Teks'}\n` +
+                    `🎯 <b>Target Penerima:</b> ${totalUsers} pengguna\n` +
                     "━━━━━━━━━━━━━━━━━━━━\n" +
-                    "📝 <b>PREVIEW PESAN:</b>\n\n" + "<code>" +
-                    broadcastContent + "</code>\n\n" +
-                    "━━━━━━━━━━━━━━━━━━━━\n" +
-                    "<i>Apakah Anda yakin ingin mengirimkan pesan di atas?</i>";
+                    "<i>Pesan di atas akan disiarkan dengan format asli (bold, italic, link, dll) sama persis ke seluruh pengguna bot.</i>\n\n" +
+                    "<b>Apakah Anda yakin ingin mengirimkannya sekarang?</b>";
 
                 return await ctx.reply(textConfirm, {
+                    reply_to_message_id: ctx.message.message_id,
                     parse_mode: "HTML",
                     ...Markup.inlineKeyboard([
                         [
