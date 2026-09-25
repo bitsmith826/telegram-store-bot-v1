@@ -111,11 +111,17 @@ Terhubung langsung dengan **PostgreSQL Supabase (Berbagi 1 Database dengan Web S
    - **`USER_ID_CHANNEL` (Channel Monitoring):**
      1. Buat Channel Telegram baru dan tambahkan bot Anda sebagai **Administrator**.
      2. Forward pesan dari channel tersebut ke [@userinfobot](https://t.me/userinfobot) untuk mendapatkan ID Channel (berawalan `-100...`).
-   - **`API_KEY_PG` (Payment Gateway NovaPay):**
-     1. Buka dashboard [novpay.id](https://novpay.id) > Menu **API / Developer**.
-     2. Salin API Key Anda.
+   - **`API_KEY_PG` (Payment Gateway QRIS NovaPay):**
+     1. Buka situs resmi **[novpay.id](https://novpay.id)** dan lakukan registrasi akun (atau login jika sudah punya).
+     2. Masuk ke **Dashboard NovaPay** > lengkapi profil toko/merchant serta nomor rekening / e-wallet penarikan (*Settlement*).
+     3. Buka menu **Integrasi API** / **Developer** / **API Keys**.
+     4. Klik tombol **Buat API Key Baru** (*Generate API Key*).
+     5. Salin string API Key yang dihasilkan (diawali dengan awalan `nvp_...`, contoh: `nvp_8e45c301cdadd8a8c2caf...`).
+     6. Tempelkan nilai tersebut ke variabel `API_KEY_PG` di file `.env`.
+     7. *(Diagnostik)*: Setelah bot dijalankan, kirim command `/pgtest` di chat Telegram untuk memastikan bot terhubung sukses ke NovaPay.
    - **`DB_URL` (Database PostgreSQL Supabase):**
-     1. Di Supabase > **Project Settings** > **Database** > bagian **Connection String** pilih tab **URI** (Connection Pooling port `6543`).
+     1. Di Supabase > **Project Settings** > **Database** > bagian **Connection String** pilih tab **URI** (Port `5432`).
+     2. *Tips VPS/Hosting:* Jika mengalami kendala DNS (`EAI_AGAIN`), ganti hostname pooler dengan Direct IP AWS Supabase: `54.255.219.82:5432`.
 
 5. **Jalankan Bot:**
    ```bash
