@@ -45,6 +45,9 @@ function adminSetup(bot) {
     bot.action("broadcast", async (ctx) => {
         try {
             await ctx.answerCbQuery().catch(() => { });
+            const adminCek = await apaAdmin(ctx);
+            if (!adminCek) return;
+
             // 🔴 1.Bersihkan session aksi admin di sini!
             if (ctx.session) {
                 delete ctx.session.adminAction; // atau ctx.session.adminAction = null;
@@ -74,6 +77,8 @@ function adminSetup(bot) {
     bot.action("broadcast_execute", async (ctx) => {
         try {
             await ctx.answerCbQuery().catch(() => { });
+            const adminCek = await apaAdmin(ctx);
+            if (!adminCek) return;
 
             if (!ctx.session || !ctx.session.broadcastMessageId || !ctx.session.broadcastChatId) {
                 return await ctx.reply("⚠️ Sesi broadcast telah kadaluwarsa atau pesan tidak ditemukan.");
@@ -1015,6 +1020,13 @@ function adminSetup(bot) {
             // lanjutkan ke handler berikutnya
             if (!ctx.session || !ctx.session.adminAction) {
                 return next();
+            }
+
+            // Keamanan ketat: pastikan pengirim adalah admin yang terdaftar di .env (USER_ID_ADMIN)
+            const adminCek = await apaAdmin(ctx);
+            if (!adminCek) {
+                if (ctx.session) delete ctx.session.adminAction;
+                return;
             }
 
             // Jika admin mengirim foto saat berada di menu selain broadcast, ingatkan untuk kirim teks
