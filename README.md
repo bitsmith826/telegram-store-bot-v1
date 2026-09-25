@@ -113,6 +113,7 @@ Terhubung langsung dengan **PostgreSQL Supabase (Berbagi 1 Database dengan Web S
      2. Forward pesan dari channel tersebut ke [@userinfobot](https://t.me/userinfobot) untuk mendapatkan ID Channel (berawalan `-100...`).
    - **`API_KEY_PG` (Payment Gateway QRIS NovaPay):**
      1. Buka situs resmi **[novpay.id](https://novpay.id)** dan lakukan registrasi akun (atau login jika sudah punya).
+        > 💡 **Token Aktivasi Pendaftaran:** Jika pendaftaran meminta token aktivasi, Anda bisa memintanya secara **GRATIS** ke owner NovaPay di Telegram: [@xNovalune](https://t.me/xNovalune) (Channel Resmi: [@novapayinfo](https://t.me/novapayinfo)).
      2. Masuk ke **Dashboard NovaPay** > lengkapi profil toko/merchant serta nomor rekening / e-wallet penarikan (*Settlement*).
      3. Buka menu **Integrasi API** / **Developer** / **API Keys**.
      4. Klik tombol **Buat API Key Baru** (*Generate API Key*).
