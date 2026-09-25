@@ -3,8 +3,17 @@ import pg from 'pg';
 
 const { Pool, Client } = pg;
 
+// Bypass DNS resolver Pterodactyl untuk mencegah error getaddrinfo EAI_AGAIN
+let connectionString = process.env.DB_URL;
+if (connectionString && connectionString.includes('aws-0-ap-southeast-1.pooler.supabase.com')) {
+    connectionString = connectionString.replace(
+        'aws-0-ap-southeast-1.pooler.supabase.com',
+        '54.255.219.82'
+    );
+}
+
 const pool = new Pool({
-    connectionString: process.env.DB_URL,
+    connectionString: connectionString,
     ssl: {
         rejectUnauthorized: false
     },
