@@ -131,7 +131,7 @@ Terhubung langsung dengan **PostgreSQL Supabase (Berbagi 1 Database dengan Web S
         postgresql://postgres.[PROJECT_REF]:[YOUR-PASSWORD]@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres
         ```
      6. **PENTING:** Ganti tulisan `[YOUR-PASSWORD]` di dalam URL tersebut dengan password database yang Anda buat di langkah 3 *(jika lupa password, klik tombol "Reset database password" di halaman tersebut)*.
-     7. *Tips VPS/Hosting:* Jika bot mengalami error koneksi DNS (`getaddrinfo EAI_AGAIN aws-0-...`), ganti nama host pooler dengan Direct IP AWS Supabase:
+     7. *Tips VPS/Hosting (Bypass DNS EAI_AGAIN):* Domain bawaan Supabase (`aws-0-[REGION].pooler.supabase.com`) adalah pilihan utama. Namun jika VPS Anda mengalami error resolver DNS (`EAI_AGAIN`) dan memilih region **Singapore (`ap-southeast-1`)**, Anda dapat mengganti host pooler dengan Direct IP AWS Singapore:
         ```text
         postgresql://postgres.[PROJECT_REF]:[PASSWORD]@54.255.219.82:5432/postgres
         ```
