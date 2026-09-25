@@ -91,10 +91,14 @@ async function apaAdmin(ctx) {
             .split(',')
             .map(id => id.trim());
 
-        const userId = String(ctx.chat.id);
+        const userId = String(ctx.from?.id || ctx.chat?.id || '');
 
         if (!adminList.includes(userId)) {
-            await ctx.reply("❌ Anda bukan admin...");
+            if (ctx.callbackQuery) {
+                await ctx.answerCbQuery("❌ Akses ditolak: Anda bukan admin.", { show_alert: true }).catch(() => { });
+            } else {
+                await ctx.reply("❌ Anda bukan admin...").catch(() => { });
+            }
             return false;
         } else {
             return true;

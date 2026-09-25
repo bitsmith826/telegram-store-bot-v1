@@ -3,6 +3,19 @@ import { pool } from './database.js';
 import { apaAdmin, checkProdukPending, checkStokAvailable } from './bot.js';
 
 function adminSetup(bot) {
+    // 🛡️ SECURITY INTERCEPTOR: Otomatis lindungi seluruh action di modul admin dengan apaAdmin(ctx)
+    const originalAction = bot.action.bind(bot);
+    bot.action = (trigger, ...handlers) => {
+        const wrappedHandlers = handlers.map(handler => {
+            return async (ctx, next) => {
+                const isAdmin = await apaAdmin(ctx);
+                if (!isAdmin) return;
+                return handler(ctx, next);
+            };
+        });
+        return originalAction(trigger, ...wrappedHandlers);
+    };
+
     // ========================================= ADMIN PANEL ==========================================
     async function menuAdmin(ctx) {
         try {
@@ -1646,6 +1659,9 @@ function adminSetup(bot) {
             console.error("Gagal menampilkan detail order callback:", err.message);
         }
     });
+
+    // Pulihkan bot.action asli agar handler publik di bot.js tidak terpengaruh
+    bot.action = originalAction;
 }
 
 export { adminSetup }
